@@ -16,7 +16,7 @@ class News(models.Model):
     price = models.IntegerField()
     description = models.TextField()
     thumbnail = models.URLField(blank=True, null=True)
-    category = models.CharField(max_length=50, choices=CATEGORY_CHOICES, default='lainnya')
+    category = models.CharField(max_length=50, choices=CATEGORY_CHOICES)
     is_featured = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     
