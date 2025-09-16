@@ -59,5 +59,3 @@ def show_json_by_id(request, news_id):
         return HttpResponse(json_data, content_type="application/json")
     except News.DoesNotExist:
         return HttpResponse(status=404)
-
-! ini
