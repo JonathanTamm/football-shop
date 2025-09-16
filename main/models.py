@@ -13,7 +13,7 @@ class News(models.Model):
     
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=255)
-    price = models.IntegerField()
+    price = models.IntegerField(default=0)
     description = models.TextField()
     thumbnail = models.URLField(blank=True, null=True)
     category = models.CharField(max_length=50, choices=CATEGORY_CHOICES)
