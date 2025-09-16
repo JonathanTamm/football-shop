@@ -19,9 +19,11 @@ class News(models.Model):
     category = models.CharField(max_length=50, choices=CATEGORY_CHOICES)
     is_featured = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
+
+    news_views = models.IntegerField(default=0)
     
     def __str__(self):
-        return self.title
+        return self.name
     
     @property
     def is_news_hot(self):
