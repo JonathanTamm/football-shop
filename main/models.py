@@ -36,4 +36,3 @@ class News(models.Model):
         self.news_views += 1
         self.save()
         
-        f

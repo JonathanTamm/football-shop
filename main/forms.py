@@ -12,3 +12,5 @@ class NewsForm(ModelForm):
             'category',
             'is_featured',
         ]
+
+forfor
