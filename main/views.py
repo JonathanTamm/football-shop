@@ -3,11 +3,10 @@ from main.forms import NewsForm
 from main.models import News
 from django.http import HttpResponse
 from django.core import serializers
-<<<<<<< HEAD
 
 def show_main(request):
     news_list = News.objects.all()
-=======
+
 from django.contrib import messages
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib.auth import authenticate, login, logout
@@ -25,36 +24,19 @@ def show_main(request):
         news_list = News.objects.all()
     else:
         news_list = News.objects.filter(user=request.user)
->>>>>>> 79f70ef (tugas4)
 
     context = {
         'npm' : '2406395695',
         'name': 'Jonathan Immanuel Tampubolon',
         'class': 'PBP F',
-<<<<<<< HEAD
         'news_list': news_list 
     }
 
     return render(request, "main.html", context)
-=======
-        'news_list': news_list,
-        'last_login': request.COOKIES.get('last_login', 'Never')
-    }
-    return render(request, "main.html",context)
->>>>>>> 79f70ef (tugas4)
 
 def create_news(request):
     form = NewsForm(request.POST or None)
 
-<<<<<<< HEAD
-    if form.is_valid() and request.method == "POST":
-        form.save()
-        return redirect('main:show_main')
-
-    context = {'form': form}
-    return render(request, "create_news.html", context)
-
-=======
     if form.is_valid() and request.method == 'POST':
         news_entry = form.save(commit = False)
         news_entry.user = request.user
@@ -68,7 +50,6 @@ def create_news(request):
     return render(request, "create_news.html", context)
 
 @login_required(login_url='/login')
->>>>>>> 79f70ef (tugas4)
 def show_news(request, id):
     news = get_object_or_404(News, pk=id)
     news.increment_views()
@@ -77,11 +58,8 @@ def show_news(request, id):
         'news': news
     }
 
-<<<<<<< HEAD
     return render(request, "news_detail.html", context)
 
-=======
->>>>>>> 79f70ef (tugas4)
 def show_xml(request):
     news_list = News.objects.all()
     xml_data = serializers.serialize("xml", news_list)
@@ -107,9 +85,6 @@ def show_json_by_id(request, news_id):
         return HttpResponse(json_data, content_type="application/json")
     except News.DoesNotExist:
         return HttpResponse(status=404)
-<<<<<<< HEAD
-=======
-
 
 def register(request):
     form = UserCreationForm()
@@ -144,4 +119,3 @@ def logout_user(request):
     response = HttpResponseRedirect(reverse('main:login'))
     response.delete_cookie('last_login')
     return response
->>>>>>> 79f70ef (tugas4)
