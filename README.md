@@ -59,3 +59,46 @@ XML by ID
 
 JSON by ID
 ![alt text](jsonbyid.png)
+<<<<<<< HEAD
+=======
+
+
+TUGAS INDIVIDU 4
+# Apa itu Django AuthenticationForm? Jelaskan juga kelebihan dan kekurangannya.
+AuthenticationForm adalah form bawaan Django yang dipakai untuk proses login standar, menerima username dan password, dan menyediakan get_user() jika valid.
+Kelebihan :
+-Aman karena sudah diuji dan mengikuti praktik Django
+-Integrasinya lancar dengan Django auth dan mudah dipakai bersama authenticate(), login(), dan AuthenticationMiddleware.
+-Menangani validasi dan pesan error, jadi kita tidak perlu menulis validasi sendiri
+
+Kekurangan:
+-Terbatas username dan password, serta jika ingin login menggunakan email, nomor telepon, atau OTP, perlu kustomisasi
+-Field tambahan, seperti captcha harus ditambah manual
+-Tampilan error perlu disesuaikan sendiri agar cocok dengan UI/UX
+
+# Apa perbedaan antara autentikasi dan otorisasi? Bagaiamana Django mengimplementasikan kedua konsep tersebut?
+Autentikasi
+-Menentukan siapa itu user dan  memverifikasi identitas user 
+Contoh: ketika user ingin login dengan username dan password
+-Ada fungsi authenticate() untuk memeriksa kredensial, login() untuk menyimpan status login, dan AuthenticationMiddleware untuk menempelkan request user pada setiap request
+
+Otorisasi
+-Menentukan apa yang boleh dilakukan user yang sudah terautentikasi (hak akses, izin, atau peran)
+Contoh: apakah user boleh menghapus produk, melihat admin dashboard, atau mengedit item orang lain
+-Ada sistem permission, Group, is_staff, is_superuser, decorator seperti @login_required. Untuk validasi akses tingkat objek, biasanya menambahkan logika sendiri
+
+Kesimpulannya, autentikasi untuk memverifikasi identitas, sedangkan otorisasi untuk memutuskan hak akses setelah identitas terverifikasi
+
+# Apa saja kelebihan dan kekurangan session dan cookies dalam konteks menyimpan state di aplikasi web?
+Cookies itu disimpan langsung di browser pengguna sehingga lebih sederhana dan bisa bertahan antar kunjungan (selama belum kadaluarsa), serta gampang dibaca atau ditulis menggunakan JavaScript untuk hal ringan seperti tema tampilan. Tapi ukurannya kecil (sekitar 4 KB), bisa dimodifikasi kalau tidak ditandatangani, rentan dicuri lewat XSS kalau tidak menggunakan HttpOnly, dan selalu ikut terkirim ke server setiap request sehingga menambah trafik.
+
+Dalam session, browser hanya menyimpan ID session di cookie, sedangkan data aslinya aman di server. Ini memungkinkan menyimpan data besar atau sensitif seperti status login. Kekurangannya, server jadi harus menyimpan dan mengelola semua session, membersihkan yang lama, dan kalau aplikasi discale ke banyak server perlu berbagi storage sehingga jadi lebih kompleks dan butuh resource ekstra.
+
+# Apakah penggunaan cookies aman secara default dalam pengembangan web, atau apakah ada risiko potensial yang harus diwaspadai? Bagaimana Django menangani hal tersebut?
+Cookie tidak otomatis aman, ada beberapa risiko seperti XSS (script jahat bisa baca cookie jika tidak pakai HttpOnly), CSRF (serangan kirim request palsu), pencurian session saat koneksi tidak pakai HTTPS, dan perubahan isi cookie jika tanpa tanda tangan.
+
+Untuk mengetasi itu, secara bawaan SESSION_COOKIE_HTTPONLY aktif, jadi cookie session tidak bisa diakses JavaScript. Django juga menyertakan middleware CSRF dan token {% csrf_token %} untuk mencegah CSRF. Dengan menyalakan SESSION_COOKIE_SECURE dan CSRF_COOKIE_SECURE, cookie hanya dikirim lewat HTTPS. Session disimpan di server melalui SESSION_ENGINE, jadi cookie hanya berisi ID acak, bukan data penting. Jika butuh menyimpan data di cookie, Django menyediakan opsi signed cookies yang ditandatangani dengan SECRET_KEY supaya tidak bisa diubah sembarangan.
+
+# Jelaskan bagaimana cara kamu mengimplementasikan checklist di atas secara step-by-step (bukan hanya sekadar mengikuti tutorial).
+Diawali dengan membuat fungsi register, login, dan logout, pendaftaran memakai UserCreationForm supaya password otomatis di-hash dan langsung login dengan auth_login, login memakai AuthenticationForm untuk validasi bawaan, dan logout dengan auth_logout sambil menghapus cookie last_login. Karena tugas meminta contoh penggunaan cookie, saya menyimpan waktu login terakhir sebagai cookie sederhana yang hanya berisi timestamp dan diset HttpOnly supaya aman, lalu menampilkannya bersama username dan daftar produk user di halaman utama jika pengguna sudah login. Semua form saya lindungi dengan {% csrf_token %} dan routing saya atur dengan URL, serta mengatur LOGIN_REDIRECT_URL dan LOGIN_URL di settings agar alur tetap rapi. Lalu, saya menambahkan dua akun contoh beserta masing-masing tiga produk. Setelah itu saya uji dengan login, melihat data produk, memeriksa cookie last_login, lalu logout untuk memastikan cookie terhapus dan halaman yang butuh login memang terlindungi.
+>>>>>>> 79f70ef (tugas4)

@@ -1,5 +1,9 @@
 import uuid
 from django.db import models
+<<<<<<< HEAD
+=======
+from django.contrib.auth.models import User
+>>>>>>> 79f70ef (tugas4)
 
 class News(models.Model):
     CATEGORY_CHOICES = [
@@ -19,8 +23,13 @@ class News(models.Model):
     category = models.CharField(max_length=50, choices=CATEGORY_CHOICES)
     is_featured = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
+<<<<<<< HEAD
 
     news_views = models.IntegerField(default=0)
+=======
+    news_views = models.IntegerField(default=0)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True)
+>>>>>>> 79f70ef (tugas4)
     
     def __str__(self):
         return self.name
