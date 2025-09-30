@@ -31,8 +31,8 @@ PRODUCTION = os.getenv('PRODUCTION', 'False').lower() == 'true'
 DEBUG = True
 
 
-ALLOWED_HOSTS = ["localhost", "127.0.0.1", "jonathan-immanuel41-footballshop.pbp.cs.ui.ac.id", "https://pbp.cs.ui.ac.id/jonathan.immanuel41/footballshop/"]
-dd
+ALLOWED_HOSTS = ["localhost", "127.0.0.1", "jonathan-immanuel41-footballshop.pbp.cs.ui.ac.id", "https://pbp.cs.ui.ac.id/jonathan.immanuel41/footballshop"]
+
 
 CSRF_TRUSTED_ORIGINS = [
     "https://jonathan-immanuel41-footballshop.pbp.cs.ui.ac.id",
