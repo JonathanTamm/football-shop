@@ -1,9 +1,9 @@
 from django.forms import ModelForm
-from main.models import News
+from main.models import Product
 
-class NewsForm(ModelForm):
+class ProductForm(ModelForm):
     class Meta:
-        model = News 
+        model = Product
         fields = [
             'name',
             'price',

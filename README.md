@@ -101,4 +101,61 @@ Untuk mengetasi itu, secara bawaan SESSION_COOKIE_HTTPONLY aktif, jadi cookie se
 
 # Jelaskan bagaimana cara kamu mengimplementasikan checklist di atas secara step-by-step (bukan hanya sekadar mengikuti tutorial).
 Diawali dengan membuat fungsi register, login, dan logout, pendaftaran memakai UserCreationForm supaya password otomatis di-hash dan langsung login dengan auth_login, login memakai AuthenticationForm untuk validasi bawaan, dan logout dengan auth_logout sambil menghapus cookie last_login. Karena tugas meminta contoh penggunaan cookie, saya menyimpan waktu login terakhir sebagai cookie sederhana yang hanya berisi timestamp dan diset HttpOnly supaya aman, lalu menampilkannya bersama username dan daftar produk user di halaman utama jika pengguna sudah login. Semua form saya lindungi dengan {% csrf_token %} dan routing saya atur dengan URL, serta mengatur LOGIN_REDIRECT_URL dan LOGIN_URL di settings agar alur tetap rapi. Lalu, saya menambahkan dua akun contoh beserta masing-masing tiga produk. Setelah itu saya uji dengan login, melihat data produk, memeriksa cookie last_login, lalu logout untuk memastikan cookie terhapus dan halaman yang butuh login memang terlindungi.
->>>>>>> 79f70ef (tugas4)
+
+
+
+
+TUGAS INDIVIDU 5
+# Jika terdapat beberapa CSS selector untuk suatu elemen HTML, jelaskan urutan prioritas pengambilan CSS selector tersebut!
+Browser akan memilih aturan berdasarkan tingkat specificity (yang mana yang paling penting). Inline style yang ditulis langsung di atribut elemen memiliki prioritas tertinggi.Setelah itu, aturan dengan ID lebih kuat daripada class dan class lebih kuat daripada aturan biasa untuk tag HTML. Kalau ada dua aturan dengan tingkat kekuatan yang sama, maka yang ditulis paling akhir di file CSS yang akan dipakai.
+
+
+# Mengapa responsive design menjadi konsep yang penting dalam pengembangan aplikasi web? Berikan contoh aplikasi yang sudah dan belum menerapkan responsive design, serta jelaskan mengapa!
+Responsive design sangat penting karena pengguna mengakses web melalui berbagai perangkat dengan ukuran layar berbeda, mulai dari smartphone hingga monitor yang memiliki layar besar. Dengan responsive design, tampilan web akan menyesuaikan secara otomatis sehingga pengalaman pengguna tetap nyaman. 
+Contoh: 
+YouTube (sudah menerapkan), dimana tampilan pada layar kecil maupun besar tetap rapi dan nyaman dipandang. Sebaliknya, situs-situs lama sering kali belum menerapkan responsive design (sekarang sudah jarang ditemui) sehingga ketika dibuka di HP tampilannya mengecil, sulit dibaca, dan membuat interaksi pengguna menjadi tidak nyaman.
+
+
+# Jelaskan perbedaan antara margin, border, dan padding, serta cara untuk mengimplementasikan ketiga hal tersebut!
+Margin merupakan jarak di luar elemen yang memisahkan satu elemen dengan elemen lain di sekitarnya (ruang di luar border). Border adalah garis pembatas yang mengelilingi elemen dan berada di antara margin dan padding (pembatas antara margin dan padding). Padding adalah ruang di dalam border yang memisahkan isi konten dengan garis border (ruang antara isi konten dengan border)
+
+implementasi:
+-Margin diimplementasikan untuk memberi jarak antar elemen. Misalnya, kalau ada dua kotak yang berdempetan, kita bisa kasih margin supaya ada spasi di antaranya
+div {
+  margin: 20px; 
+}
+-Border diimplementasikan untuk memberi garis tepi pada elemen. Kita bisa atur ketebalan, gaya garis, dan warnanya
+div {
+  border: 2px black;
+}
+-Padding diimplementasikan untuk memberi jarak antara isi elemen dengan garis tepi border. Jadi konten tidak menempel langsung ke pinggir kotak
+div {
+  padding: 10px;
+}
+
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+.box {
+  margin: 20px;
+  border: 2px black;
+  padding: 10px;
+}
+</style>
+</head>
+<body>
+
+<div class="box">
+  ini adalah contoh kotak dengan margin, border, dan padding
+</div>
+
+</body>
+</html>
+
+
+# Jelaskan konsep flex box dan grid layout beserta kegunaannya!
+Flex box dan Grid adalah fitur di CSS yang digunakan untuk menyusun tata letak (layout) halaman web. Flex box dipakai untuk menyusun elemen secara satu arah saja (1 dimensi), baik baris ataupun kolom. Misalnya kita mau buat beberapa tombol rata tengah di satu baris, flex box sangat cocok. Sementara grid dipakai untuk menyusun elemen dalam dua arah sekaligus (baris dan kolom) (2 dimensi), jadi sangat cocok untuk layout yang lebih rumit seperti dashboard atau galeri foto. Singkatnya, flex box bagus untuk mengatur deretan elemen sederhana, sedangkan grid bagus untuk struktur halaman yang lebih kompleks.
+
+# Jelaskan bagaimana cara kamu mengimplementasikan checklist di atas secara step-by-step (bukan hanya sekadar mengikuti tutorial)!
+Pertama, saya menyiapkan struktur project Django beserta aplikasi yang diperlukan. Setelah itu, saya menambahkan halaman login, register, home, detail, create, dan edit. Untuk navigasi antarhalaman, saya menambahkan navbar pada template utama. Styling halaman saya lakukan menggunakan Tailwind CSS yang diatur melalui static files Django sehingga tampilan lebih rapi dan nyaman dilihat. Model yang digunakan adalah product untuk merepresentasikan data dan setiap fitur seperti tambah, ubah, dan hapus produk dihubungkan ke view yang sesuai.
