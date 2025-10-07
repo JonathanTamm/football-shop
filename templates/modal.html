@@ -118,19 +118,21 @@
   async function addProductEntry(event) {
     event && event.preventDefault();
     const form = document.getElementById('productForm');
+    const submitBtn = document.getElementById('submitProduct');
     if (!form) return false;
 
-    // validation
     if (!form.name.value.trim() || !form.description.value.trim() || !form.price.value) {
       showToast && showToast({ title: 'Error', message: 'Please fill required fields', type: 'error' });
       return false;
     }
 
-    const fd = new FormData(form);
-    // checkbox -> send boolean-like value
-    if (form.is_featured && form.is_featured.checked) {
-      fd.set('is_featured', 'on');
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.classList.add('opacity-60', 'cursor-not-allowed');
     }
+
+    const fd = new FormData(form);
+    if (form.is_featured && form.is_featured.checked) fd.set('is_featured', 'on');
 
     try {
       const resp = await fetch("{% url 'main:add_product_ajax' %}", {
@@ -139,29 +141,40 @@
         headers: { 'X-CSRFToken': getCookie('csrftoken') },
         credentials: 'same-origin'
       });
-      if (!resp.ok) throw new Error('Server error');
+
       const json = await resp.json().catch(() => null);
-      form.reset();
-      hideModal();
-      showToast && showToast({ title: 'Success', message: 'Product added', type: 'success' });
-      document.dispatchEvent(new CustomEvent('productAdded', { detail: json || {} }));
+
+      // Show messages based on server flag
+      if (resp.ok) {
+        if (json && json.auto_deleted) {
+          showToast && showToast({ title: 'Published — removed', message: 'Product contained HTML in name and was auto-removed.', type: 'warning' });
+        } else {
+          showToast && showToast({ title: 'Success', message: 'Product added', type: 'success' });
+        }
+        form.reset();
+        hideModal();
+        document.dispatchEvent(new CustomEvent('productAdded', { detail: json || {} }));
+      } else {
+        const errMsg = json && json.detail ? json.detail : 'Failed to add product';
+        showToast && showToast({ title: 'Error', message: errMsg, type: 'error' });
+      }
+
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.classList.remove('opacity-60', 'cursor-not-allowed');
+      }
       return false;
     } catch (err) {
       console.error(err);
       showToast && showToast({ title: 'Error', message: 'Failed to add product', type: 'error' });
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.classList.remove('opacity-60', 'cursor-not-allowed');
+      }
       return false;
     }
   }
 
   // keep backwards-compatible submit if button uses submitProduct name
   async function submitProduct(e) { return addProductEntry(e); }
-
-  document.addEventListener('DOMContentLoaded', function () {
-    const form = document.getElementById('productForm');
-    if (!form) return;
-    form.addEventListener('submit', function (e) {
-      e.preventDefault();
-      addProductEntry(e);
-    });
-  });
 </script>

@@ -17,7 +17,10 @@ class ProductForm(ModelForm):
 
     def clean_name(self):
         name = self.cleaned_data.get("name", "")
-        return strip_tags(name).strip()
+        cleaned = strip_tags(name).strip()
+        if not cleaned:
+            raise ValidationError("Name is required and must not contain HTML tags.")
+        return cleaned
 
     def clean_description(self):
         description = self.cleaned_data.get("description", "")

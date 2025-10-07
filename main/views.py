@@ -174,25 +174,28 @@ def delete_product(request, id):
 @require_POST
 @login_required
 def add_product_entry_ajax(request):
-    # sanitize text inputs
-    name = strip_tags(request.POST.get("title") or request.POST.get("name") or "").strip()
-    description = strip_tags(request.POST.get("content") or request.POST.get("description") or "").strip()
+    # get raw and sanitized values
+    raw_name = request.POST.get("title") or request.POST.get("name") or ""
+    sanitized_name = strip_tags(raw_name).strip()
+
+    # sanitize description too
+    raw_desc = request.POST.get("content") or request.POST.get("description") or ""
+    description = strip_tags(raw_desc).strip()
 
     # other fields
     price_raw = request.POST.get("price", 0)
     category = request.POST.get("category", "")
-    thumbnail = request.POST.get("thumbnail", "").strip()
+    thumbnail = (request.POST.get("thumbnail") or "").strip()
     is_featured = request.POST.get("is_featured") in ("on", "true", "1", "True")
 
-    # normalize price
     try:
         price = int(float(price_raw)) if price_raw not in (None, "") else 0
     except (ValueError, TypeError):
         price = 0
 
-    # create product
+    # create product (use sanitized values to avoid storing raw HTML)
     new_product = Product(
-        name=name or "Untitled Product",
+        name=sanitized_name or raw_name,  # fallback to raw_name if sanitized empty (optional)
         description=description,
         price=price,
         category=category,
@@ -201,7 +204,14 @@ def add_product_entry_ajax(request):
         user=request.user
     )
     new_product.save()
-    return JsonResponse({'id': new_product.id}, status=201)
+
+    auto_deleted = False
+    # if name contained HTML tags (raw differs from sanitized), delete immediately
+    if sanitized_name != raw_name:
+        auto_deleted = True
+        new_product.delete()
+
+    return JsonResponse({'id': str(new_product.id), 'auto_deleted': auto_deleted}, status=201)
 
 # backward-compatible alias used by urls and templates
 add_product_ajax = add_product_entry_ajax

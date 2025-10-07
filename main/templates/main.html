@@ -97,7 +97,7 @@
     if (errorEl) errorEl.classList.toggle('hidden', !error);
     if (emptyEl) emptyEl.classList.toggle('hidden', !empty);
     if (gridEl) gridEl.classList.toggle('hidden', !grid);
-    if (grid) gridEl.className = 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6';
+    if (grid && gridEl) gridEl.className = 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6';
   }
 
   function getCategoryLabel(code) {
@@ -112,84 +112,125 @@
     const article = document.createElement('article');
     article.className = 'bg-gray-900 text-white rounded-xl border border-gray-700 hover:shadow-2xl hover:shadow-green-700/20 transition-shadow duration-300 overflow-hidden flex flex-col h-full';
 
-    // url templates (replace placeholder id)
-    const detailTpl = `{% url 'main:show_product' '00000000-0000-0000-0000-000000000000' %}`;
-    const editTpl = `{% url 'main:edit_product' '00000000-0000-0000-0000-000000000000' %}`;
-    const deleteTpl = `{% url 'main:delete_product' '00000000-0000-0000-0000-000000000000' %}`;
-    const detailLink = detailTpl.replace('00000000-0000-0000-0000-000000000000', item.id);
-    const editLink = editTpl.replace('00000000-0000-0000-0000-000000000000', item.id);
-    const deleteLink = deleteTpl.replace('00000000-0000-0000-0000-000000000000', item.id);
-
-    // sanitize incoming values
-    const name = DOMPurify.sanitize(item.name || '');
-    const description = DOMPurify.sanitize(item.description || '');
-    const category = DOMPurify.sanitize(item.category || '');
-    const thumbnail = DOMPurify.sanitize(item.thumbnail || '');
+    // safe values
+    const name = item.name || '';
+    const description = item.description || '';
+    const category = item.category || '';
+    const thumbnail = item.thumbnail || '';
     const createdAt = item.created_at ? new Date(item.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : '';
     const views = Number(item.product_views || 0);
     const isFeatured = !!item.is_featured;
     const isHot = views > 20;
-
-    // thumbnail html
-    const thumbHtml = thumbnail
-      ? `<img src="${thumbnail}" alt="${name}" class="w-full h-auto max-h-56 object-contain rounded-md shadow-sm mx-auto">`
-      : `<div class="w-full h-56 bg-gray-700 rounded-md"></div>`;
-
-    // badges
-    const featuredBadge = isFeatured ? `<span class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-yellow-100 text-yellow-800">Featured</span>` : '';
-    const hotBadge = isHot ? `<span class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-red-100 text-red-800">Hot</span>` : '';
-
-    // permission for edit/delete
     const canEdit = CURRENT_USER_ID && String(CURRENT_USER_ID) === String(item.user_id);
-    const editDeleteHtml = canEdit
-      ? `<div class="flex space-x-2">
-           <a href="${editLink}" class="text-gray-400 hover:text-gray-200 text-sm transition-colors">Edit</a>
-           <a href="${deleteLink}" class="text-red-500 hover:underline text-sm transition-colors">Delete</a>
-         </div>`
-      : '';
 
-    // price formatting (use existing helper if available)
-    const priceText = (typeof formatRupiah === 'function') ? formatRupiah(item.price) : ('Rp ' + (Number(item.price) || 0).toString().replace(/\B(?=(\d{3})+(?!\d))/g, "."));
+    // top (thumbnail + badges)
+    const top = document.createElement('div');
+    top.className = 'relative overflow-hidden bg-gray-800 flex items-center justify-center p-4';
 
-    // safe description (use DOMPurify to avoid XSS)
-    const safeDescription = DOMPurify.sanitize(description);
+    if (thumbnail) {
+      const img = document.createElement('img');
+      img.className = 'w-full h-auto max-h-56 object-contain rounded-md shadow-sm mx-auto';
+      // set src via property (prevents injection)
+      img.src = DOMPurify.sanitize(thumbnail, {ALLOWED_URI_REGEXP: /.*/});
+      // alt set safely via textContent -> attribute value (no HTML parsing)
+      img.alt = DOMPurify.sanitize(name);
+      top.appendChild(img);
+    } else {
+      const placeholder = document.createElement('div');
+      placeholder.className = 'w-full h-56 bg-gray-700 rounded-md';
+      top.appendChild(placeholder);
+    }
 
-    article.innerHTML = `
-      <div class="relative overflow-hidden bg-gray-800 flex items-center justify-center p-4">
-        ${thumbHtml}
-        <div class="absolute top-3 left-3">
-          <span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-green-600 text-white">${DOMPurify.sanitize(getCategoryLabel(category))}</span>
-        </div>
-        <div class="absolute top-3 right-3 flex space-x-2">
-          ${featuredBadge}
-          ${hotBadge}
-        </div>
-      </div>
+    const leftBadge = document.createElement('div');
+    leftBadge.className = 'absolute top-3 left-3';
+    const catSpan = document.createElement('span');
+    catSpan.className = 'inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-green-600 text-white';
+    catSpan.textContent = DOMPurify.sanitize(getCategoryLabel(category));
+    leftBadge.appendChild(catSpan);
+    top.appendChild(leftBadge);
 
-      <div class="p-4 flex-1 flex flex-col">
-        <div class="flex items-center text-sm text-gray-400 gap-4 mb-3">
-          <time>${createdAt}</time>
-          <span>•</span>
-          <span>${views} views</span>
-        </div>
+    const rightBadges = document.createElement('div');
+    rightBadges.className = 'absolute top-3 right-3 flex space-x-2';
+    if (isFeatured) {
+      const f = document.createElement('span');
+      f.className = 'inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-yellow-100 text-yellow-800';
+      f.textContent = 'Featured';
+      rightBadges.appendChild(f);
+    }
+    if (isHot) {
+      const h = document.createElement('span');
+      h.className = 'inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-red-100 text-red-800';
+      h.textContent = 'Hot';
+      rightBadges.appendChild(h);
+    }
+    top.appendChild(rightBadges);
 
-        <h3 class="text-xl font-semibold text-white mb-2 line-clamp-2">
-          <a href="${detailLink}" class="hover:text-green-400 transition-colors">${name}</a>
-        </h3>
+    // body
+    const body = document.createElement('div');
+    body.className = 'p-4 flex-1 flex flex-col';
 
-        <p class="text-gray-300 text-sm leading-relaxed mb-4 line-clamp-3">${safeDescription}</p>
+    const metaRow = document.createElement('div');
+    metaRow.className = 'flex items-center text-sm text-gray-400 gap-4 mb-3';
+    const ttime = document.createElement('time');
+    ttime.textContent = createdAt;
+    metaRow.appendChild(ttime);
+    const sep = document.createElement('span');
+    sep.textContent = '•';
+    metaRow.appendChild(sep);
+    const vspan = document.createElement('span');
+    vspan.textContent = `${views} views`;
+    metaRow.appendChild(vspan);
+    body.appendChild(metaRow);
 
-        <div class="mt-auto flex items-center justify-between">
-          <div class="text-green-400 font-medium">${priceText}</div>
-          ${editDeleteHtml}
-        </div>
-      </div>
-    `;
+    const titleH3 = document.createElement('h3');
+    titleH3.className = 'text-xl font-semibold text-white mb-2 line-clamp-2';
+    const titleA = document.createElement('a');
+    titleA.href = `{% url 'main:show_product' '00000000-0000-0000-0000-000000000000' %}`.replace('00000000-0000-0000-0000-000000000000', item.id);
+    titleA.className = 'hover:text-green-400 transition-colors';
+    titleA.textContent = DOMPurify.sanitize(name);
+    titleH3.appendChild(titleA);
+    body.appendChild(titleH3);
+
+    const descP = document.createElement('p');
+    descP.className = 'text-gray-300 text-sm leading-relaxed mb-4 line-clamp-3';
+    // use textContent to avoid any HTML execution
+    descP.textContent = description;
+    body.appendChild(descP);
+
+    const footerRow = document.createElement('div');
+    footerRow.className = 'mt-auto flex items-center justify-between';
+    const priceDiv = document.createElement('div');
+    priceDiv.className = 'text-green-400 font-medium';
+    priceDiv.textContent = (typeof formatRupiah === 'function') ? formatRupiah(item.price) : ('Rp ' + (Number(item.price) || 0).toString().replace(/\B(?=(\d{3})+(?!\d))/g, "."));
+    footerRow.appendChild(priceDiv);
+
+    if (canEdit) {
+      const edDiv = document.createElement('div');
+      edDiv.className = 'text-sm';
+      const editA = document.createElement('a');
+      editA.href = `{% url 'main:edit_product' '00000000-0000-0000-0000-000000000000' %}`.replace('00000000-0000-0000-0000-000000000000', item.id);
+      editA.className = 'text-gray-400 hover:text-gray-200 mr-4';
+      editA.textContent = 'Edit';
+      const delA = document.createElement('a');
+      delA.href = `{% url 'main:delete_product' '00000000-0000-0000-0000-000000000000' %}`.replace('00000000-0000-0000-0000-000000000000', item.id);
+      delA.className = 'text-red-500 hover:underline';
+      delA.textContent = 'Delete';
+      edDiv.appendChild(editA);
+      edDiv.appendChild(delA);
+      footerRow.appendChild(edDiv);
+    }
+
+    body.appendChild(footerRow);
+
+    // assemble
+    article.appendChild(top);
+    article.appendChild(body);
 
     return article;
   }
 
   function renderProducts(products) {
+    if (!gridEl) return;
     gridEl.innerHTML = '';
     products.forEach(p => {
       const card = buildProductCardElement(p);
@@ -200,52 +241,69 @@
   async function fetchProducts(filter='all') {
     showSection({ loading: true });
     try {
-      const response = await fetch(`${PRODUCTS_API}?filter=${filter}`);
+      const response = await fetch(`${PRODUCTS_API}?filter=${filter}`, { credentials: 'same-origin' });
       if (!response.ok) throw new Error('Network response was not ok');
       const data = await response.json();
-      allProducts = data.products || [];
-      showSection({ grid: true, empty: allProducts.length === 0 });
-      renderProducts(allProducts);
+
+      // Accept either an array (old API) or { products: [...] } (future)
+      if (Array.isArray(data)) {
+        allProducts = data;
+      } else if (data && Array.isArray(data.products)) {
+        allProducts = data.products;
+      } else {
+        allProducts = [];
+      }
+
+      const toRender = activeFilter === 'all'
+        ? allProducts
+        : allProducts.filter(p => String(p.user_id) === String(CURRENT_USER_ID));
+
+      if (!toRender.length) {
+        showSection({ empty: true });
+      } else {
+        renderProducts(toRender);
+        showSection({ grid: true });
+      }
     } catch (error) {
       console.error('Error fetching products:', error);
       showSection({ error: true });
     }
   }
 
-  btnAll.addEventListener('click', (e) => {
-    e.preventDefault();
+  // expose helper so modal/other scripts can refresh the list
+  window.fetchProductsFromServer = function(filter) {
+    fetchProducts(filter || activeFilter || 'all');
+  };
+
+  // filter buttons
+  btnAll && btnAll.addEventListener('click', (e) => {
+    e && e.preventDefault();
     activeFilter = 'all';
     updateFilterButtons();
     renderProducts(allProducts);
   });
 
-  btnMy.addEventListener('click', (e) => {
-    e.preventDefault();
+  btnMy && btnMy.addEventListener('click', (e) => {
+    e && e.preventDefault();
     activeFilter = 'my';
     updateFilterButtons();
-    const filteredProducts = allProducts.filter(p => String(p.user_id) === CURRENT_USER_ID);
+    const filteredProducts = allProducts.filter(p => String(p.user_id) === String(CURRENT_USER_ID));
     renderProducts(filteredProducts);
   });
 
-  // Initial fetch
+  // initial load
   fetchProducts();
 })();
-
-// Add event listener to detect new produuct
-document.addEventListener('productAdded', function() {
-    // Refresh data without page reload
-    fetchProductFromServer();
-});
 </script>
+
+<!-- listen for productAdded events dispatched after AJAX create -->
 <script>
-  // listen untuk event productAdded yang dikirim setelah AJAX tambah product
-  document.addEventListener('productAdded', function () {
-    if (typeof window.fetchProductsFromServer === 'function') {
-      window.fetchProductsFromServer();
-    } else {
-      // jika helper tidak tersedia, reload sebagai fallback
-      location.reload();
-    }
-  });
+document.addEventListener('productAdded', function () {
+  if (typeof window.fetchProductsFromServer === 'function') {
+    window.fetchProductsFromServer();
+  } else {
+    location.reload();
+  }
+});
 </script>
 {% endblock %}
