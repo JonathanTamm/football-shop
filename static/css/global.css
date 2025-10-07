@@ -45,3 +45,24 @@
     border-color: #16a34a;
     box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.1);
 }
+
+.form-style form input, form textarea, form select {
+  background-color: #111827;
+  color: #f9fafb;
+  border-color: #374151;
+}
+
+.form-style form input:focus, form textarea:focus, form select:focus {
+  border-color: #16a34a;
+  box-shadow: 0 0 0 3px rgba(22,163,74,0.3);
+}
+
+.form-style input[type="checkbox"] {
+  background-color: #111827;
+  border-color: #374151;
+}
+
+.form-style input[type="checkbox"]:checked {
+  background-color: #16a34a;
+}
+

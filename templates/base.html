@@ -3,12 +3,22 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    {% block meta %} {% endblock meta %}
+    <title>{% block title %}Football Product{% endblock %}</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="{% static 'css/global.css' %}"/>
+    <!-- Add DOMPurify for client-side sanitization -->
+    <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.5/dist/purify.min.js"></script>
+    <link rel="stylesheet" href="{% static 'css/global.css' %}">
   </head>
-  <body>
-    {% block content %} {% endblock content %}
+
+  <body class="bg-gray-950 text-gray-100 min-h-screen flex flex-col font-sans">
+    {% include 'navbar.html' %}
+    {% include 'toast.html' %}
+    {% include 'modal.html' %}
+    <main class="flex-1 container mx-auto px-6 py-10 pt-24">
+      {% block content %}{% endblock %}
+    </main>
+    <footer class="text-center text-gray-500 py-6 border-t border-gray-800">
+      © 2025 Football Shop — Play with Style
+    </footer>
   </body>
 </html>

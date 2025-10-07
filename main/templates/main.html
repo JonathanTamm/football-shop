@@ -1,52 +1,56 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block meta %}
-<title>Football Product</title>
-{% endblock meta %}
+{% block title %}Football Shop{% endblock %}
 
 {% block content %}
-{% include 'navbar.html' %}
-<div class="bg-gray-50 w-full pt-16 min-h-screen">
+<div class="w-full pt-6 min-h-screen">
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
     <!-- Header Section -->
     <div class="mb-8">
-      <h1 class="text-3xl font-bold text-gray-900 mb-2">Latest Football Product</h1>
-      <p class="text-gray-600">Stay updated with the latest football stories and analysis</p>
+      <h1 class="text-3xl font-bold text-white mb-2">Latest Football Product</h1>
+      <p class="text-gray-400">Stay updated with the latest football stories and analysis</p>
+
+      <!-- Button to open modal (AJAX create) -->
+      <div class="mt-4">
+        <button onclick="showModal()" class="inline-flex items-center px-4 py-2 bg-green-600 text-white font-semibold rounded-md hover:bg-green-700 transition-colors">
+          Create Product by AJAX
+        </button>
+      </div>
     </div>
 
-    <!-- Filter Section -->
-    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8 bg-white rounded-lg border border-gray-200 p-4">
+    <!-- Filter -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8 bg-gray-800 rounded-lg border border-gray-700 p-4">
       <div class="flex space-x-3 mb-4 sm:mb-0">
-        <a href="?" class="{% if request.GET.filter == 'all' or not request.GET.filter  %} bg-green-600 text-white{% else %}bg-white text-gray-700 border border-gray-300{% endif %} px-4 py-2 rounded-md font-medium transition-colors hover:bg-green-600 hover:text-white">
+        <a href="?" class="{% if request.GET.filter == 'all' or not request.GET.filter  %} bg-green-600 text-white{% else %}bg-gray-900 text-gray-300 border border-gray-700{% endif %} px-4 py-2 rounded-md font-medium transition-colors hover:bg-green-600 hover:text-white" id="filter-all">
           All Product
         </a>
-        <a href="?filter=my" class="{% if request.GET.filter == 'my' %} bg-green-600 text-white{% else %}bg-white text-gray-700 border border-gray-300{% endif %} px-4 py-2 rounded-md font-medium transition-colors hover:bg-green-600 hover:text-white">
+        <a href="?filter=my" class="{% if request.GET.filter == 'my' %} bg-green-600 text-white{% else %}bg-gray-900 text-gray-300 border border-gray-700{% endif %} px-4 py-2 rounded-md font-medium transition-colors hover:bg-green-600 hover:text-white" id="filter-my">
           My Product
         </a>
       </div>
       {% if user.is_authenticated %}
-        <div class="text-sm text-gray-500">
+        <div class="text-sm text-gray-400">
           Last login: {{ last_login }}
         </div>
       {% endif %}
     </div>
 
-    <!-- Product Grid -->
+    <!-- Product Grid / Empty -->
     {% if not product_list %}
-      <div class="bg-white rounded-lg border border-gray-200 p-12 text-center">
+      <div class="bg-gray-800 rounded-lg border border-gray-700 p-12 text-center">
         <div class="w-32 h-32 mx-auto mb-4">
           <img src="{% static 'image/no-product.png' %}" alt="No product available" class="w-full h-full object-contain">
         </div>
-        <h3 class="text-lg font-medium text-gray-900 mb-2">No product found</h3>
-        <p class="text-gray-500 mb-6">Be the first to share football product with the community.</p>
+        <h3 class="text-lg font-medium text-white mb-2">No product found</h3>
+        <p class="text-gray-400 mb-6">Be the first to share football product with the community.</p>
         <a href="{% url 'main:create_product' %}" class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors">
           Create Product
         </a>
       </div>
     {% else %}
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="grid">
         {% for product in product_list %}
           {% include 'card_product.html' with product=product %}
         {% endfor %}
@@ -54,4 +58,194 @@
     {% endif %}
   </div>
 </div>
-{% endblock content %}
+
+<script>
+(function () {
+  // Configuration
+  const PRODUCTS_API = "{% url 'main:show_json' %}";
+  const CURRENT_USER_ID = "{{ user.id|default_if_none:'' }}";
+
+  // DOM
+  const loadingEl = document.getElementById('loading');
+  const errorEl = document.getElementById('error');
+  const emptyEl = document.getElementById('empty');
+  const gridEl = document.getElementById('grid');
+  const btnAll = document.getElementById('filter-all');
+  const btnMy = document.getElementById('filter-my');
+
+  let activeFilter = 'all';
+  let allProducts = [];
+
+  function formatRupiah(value) {
+    const n = Number(value) || 0;
+    return 'Rp ' + n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+  }
+
+  function updateFilterButtons() {
+    if (!btnAll || !btnMy) return;
+    if (activeFilter === 'all') {
+      btnAll.className = 'bg-green-600 text-white px-4 py-2 rounded-md font-medium transition-colors hover:bg-green-600 hover:text-white';
+      btnMy.className = 'bg-gray-900 text-gray-300 border border-gray-700 px-4 py-2 rounded-md font-medium transition-colors hover:bg-green-600 hover:text-white';
+    } else {
+      btnMy.className = 'bg-green-600 text-white px-4 py-2 rounded-md font-medium transition-colors hover:bg-green-600 hover:text-white';
+      btnAll.className = 'bg-gray-900 text-gray-300 border border-gray-700 px-4 py-2 rounded-md font-medium transition-colors hover:bg-green-600 hover:text-white';
+    }
+  }
+
+  function showSection({ loading=false, error=false, empty=false, grid=false }) {
+    if (loadingEl) loadingEl.classList.toggle('hidden', !loading);
+    if (errorEl) errorEl.classList.toggle('hidden', !error);
+    if (emptyEl) emptyEl.classList.toggle('hidden', !empty);
+    if (gridEl) gridEl.classList.toggle('hidden', !grid);
+    if (grid) gridEl.className = 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6';
+  }
+
+  function getCategoryLabel(code) {
+    const map = {
+      jersey: 'Jersey', sepatu: 'Sepatu', bola: 'Bola',
+      aksesoris: 'Aksesoris', peralatan: 'Peralatan', koleksi: 'Koleksi'
+    };
+    return map[code] || code;
+  }
+
+  function buildProductCardElement(item) {
+    const article = document.createElement('article');
+    article.className = 'bg-gray-900 text-white rounded-xl border border-gray-700 hover:shadow-2xl hover:shadow-green-700/20 transition-shadow duration-300 overflow-hidden flex flex-col h-full';
+
+    // url templates (replace placeholder id)
+    const detailTpl = `{% url 'main:show_product' '00000000-0000-0000-0000-000000000000' %}`;
+    const editTpl = `{% url 'main:edit_product' '00000000-0000-0000-0000-000000000000' %}`;
+    const deleteTpl = `{% url 'main:delete_product' '00000000-0000-0000-0000-000000000000' %}`;
+    const detailLink = detailTpl.replace('00000000-0000-0000-0000-000000000000', item.id);
+    const editLink = editTpl.replace('00000000-0000-0000-0000-000000000000', item.id);
+    const deleteLink = deleteTpl.replace('00000000-0000-0000-0000-000000000000', item.id);
+
+    // sanitize incoming values
+    const name = DOMPurify.sanitize(item.name || '');
+    const description = DOMPurify.sanitize(item.description || '');
+    const category = DOMPurify.sanitize(item.category || '');
+    const thumbnail = DOMPurify.sanitize(item.thumbnail || '');
+    const createdAt = item.created_at ? new Date(item.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : '';
+    const views = Number(item.product_views || 0);
+    const isFeatured = !!item.is_featured;
+    const isHot = views > 20;
+
+    // thumbnail html
+    const thumbHtml = thumbnail
+      ? `<img src="${thumbnail}" alt="${name}" class="w-full h-auto max-h-56 object-contain rounded-md shadow-sm mx-auto">`
+      : `<div class="w-full h-56 bg-gray-700 rounded-md"></div>`;
+
+    // badges
+    const featuredBadge = isFeatured ? `<span class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-yellow-100 text-yellow-800">Featured</span>` : '';
+    const hotBadge = isHot ? `<span class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-red-100 text-red-800">Hot</span>` : '';
+
+    // permission for edit/delete
+    const canEdit = CURRENT_USER_ID && String(CURRENT_USER_ID) === String(item.user_id);
+    const editDeleteHtml = canEdit
+      ? `<div class="flex space-x-2">
+           <a href="${editLink}" class="text-gray-400 hover:text-gray-200 text-sm transition-colors">Edit</a>
+           <a href="${deleteLink}" class="text-red-500 hover:underline text-sm transition-colors">Delete</a>
+         </div>`
+      : '';
+
+    // price formatting (use existing helper if available)
+    const priceText = (typeof formatRupiah === 'function') ? formatRupiah(item.price) : ('Rp ' + (Number(item.price) || 0).toString().replace(/\B(?=(\d{3})+(?!\d))/g, "."));
+
+    // safe description (use DOMPurify to avoid XSS)
+    const safeDescription = DOMPurify.sanitize(description);
+
+    article.innerHTML = `
+      <div class="relative overflow-hidden bg-gray-800 flex items-center justify-center p-4">
+        ${thumbHtml}
+        <div class="absolute top-3 left-3">
+          <span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-green-600 text-white">${DOMPurify.sanitize(getCategoryLabel(category))}</span>
+        </div>
+        <div class="absolute top-3 right-3 flex space-x-2">
+          ${featuredBadge}
+          ${hotBadge}
+        </div>
+      </div>
+
+      <div class="p-4 flex-1 flex flex-col">
+        <div class="flex items-center text-sm text-gray-400 gap-4 mb-3">
+          <time>${createdAt}</time>
+          <span>•</span>
+          <span>${views} views</span>
+        </div>
+
+        <h3 class="text-xl font-semibold text-white mb-2 line-clamp-2">
+          <a href="${detailLink}" class="hover:text-green-400 transition-colors">${name}</a>
+        </h3>
+
+        <p class="text-gray-300 text-sm leading-relaxed mb-4 line-clamp-3">${safeDescription}</p>
+
+        <div class="mt-auto flex items-center justify-between">
+          <div class="text-green-400 font-medium">${priceText}</div>
+          ${editDeleteHtml}
+        </div>
+      </div>
+    `;
+
+    return article;
+  }
+
+  function renderProducts(products) {
+    gridEl.innerHTML = '';
+    products.forEach(p => {
+      const card = buildProductCardElement(p);
+      gridEl.appendChild(card);
+    });
+  }
+
+  async function fetchProducts(filter='all') {
+    showSection({ loading: true });
+    try {
+      const response = await fetch(`${PRODUCTS_API}?filter=${filter}`);
+      if (!response.ok) throw new Error('Network response was not ok');
+      const data = await response.json();
+      allProducts = data.products || [];
+      showSection({ grid: true, empty: allProducts.length === 0 });
+      renderProducts(allProducts);
+    } catch (error) {
+      console.error('Error fetching products:', error);
+      showSection({ error: true });
+    }
+  }
+
+  btnAll.addEventListener('click', (e) => {
+    e.preventDefault();
+    activeFilter = 'all';
+    updateFilterButtons();
+    renderProducts(allProducts);
+  });
+
+  btnMy.addEventListener('click', (e) => {
+    e.preventDefault();
+    activeFilter = 'my';
+    updateFilterButtons();
+    const filteredProducts = allProducts.filter(p => String(p.user_id) === CURRENT_USER_ID);
+    renderProducts(filteredProducts);
+  });
+
+  // Initial fetch
+  fetchProducts();
+})();
+
+// Add event listener to detect new produuct
+document.addEventListener('productAdded', function() {
+    // Refresh data without page reload
+    fetchProductFromServer();
+});
+</script>
+<script>
+  // listen untuk event productAdded yang dikirim setelah AJAX tambah product
+  document.addEventListener('productAdded', function () {
+    if (typeof window.fetchProductsFromServer === 'function') {
+      window.fetchProductsFromServer();
+    } else {
+      // jika helper tidak tersedia, reload sebagai fallback
+      location.reload();
+    }
+  });
+</script>
+{% endblock %}

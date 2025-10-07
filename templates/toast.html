@@ -1,0 +1,13 @@
+{% load static %}
+<div id="toast-component" class="fixed bottom-8 right-8 z-50 pointer-events-none opacity-0 translate-y-8 transition-all duration-300">
+  <div id="toast-inner" class="flex items-start gap-4 p-4 rounded-xl bg-gray-800 border border-gray-700 text-white pointer-events-auto shadow-xl">
+    <span id="toast-icon" class="text-2xl flex-none"></span>
+    <div class="min-w-0">
+      <h3 id="toast-title" class="font-semibold text-sm">Title</h3>
+      <p id="toast-message" class="text-sm text-gray-200 mt-1 line-clamp-3">Message</p>
+    </div>
+    <button id="toast-close" aria-label="Close" class="ml-3 text-gray-300 hover:text-white">&times;</button>
+  </div>
+</div>
+
+<script src="{% static 'js/toast.js' %}"></script>
