@@ -28,8 +28,11 @@
     <div class="border-t border-gray-700 pt-4 flex items-center justify-between">
       <a href="{% url 'main:show_product' product.id %}" class="text-green-500 hover:underline">Read more</a>
       <div class="text-sm">
-        <a href="{% url 'main:edit_product' product.id %}" class="text-gray-400 hover:text-gray-200 mr-4">Edit</a>
-        <a href="{% url 'main:delete_product' product.id %}" class="text-red-500 hover:underline">Delete</a>
+        {% if user.is_authenticated and product.user_id == user.id %}
+          <!-- change to JS buttons for AJAX -->
+          <button type="button" class="text-gray-400 hover:text-gray-200 mr-4 btn-edit" data-id="{{ product.id }}">Edit</button>
+          <button type="button" class="text-red-500 hover:underline btn-delete" data-id="{{ product.id }}">Delete</button>
+        {% endif %}
       </div>
     </div>
   </div>

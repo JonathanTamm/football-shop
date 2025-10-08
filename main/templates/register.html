@@ -13,7 +13,7 @@
         <p class="text-gray-400">Create your Football Shop account</p>
       </div>
 
-      <form method="POST" class="space-y-5">
+      <form id="registerForm" onsubmit="return registerSubmit(event)" class="space-y-5">
         {% csrf_token %}
         <div>
           <label for="username" class="block text-sm font-medium text-gray-300 mb-2">Username</label>
@@ -52,4 +52,29 @@
     </div>
   </div>
 </div>
+
+<script>
+async function registerSubmit(e){
+  e && e.preventDefault();
+  const f = document.getElementById('registerForm');
+  const fd = new FormData(f);
+  try{
+    const resp = await fetch("{% url 'main:register_ajax' %}", {
+      method:'POST',
+      body: fd,
+      headers: { 'X-CSRFToken': document.cookie.match('(^|;)\\s*csrftoken\\s*=\\s*([^;]+)')?.pop() || '' },
+      credentials:'same-origin'
+    });
+    const json = await resp.json().catch(()=>null);
+    if (resp.ok) {
+      showToast && showToast({ title:'Created', message:'Account created', type:'success', duration:800 });
+      setTimeout(()=> { location.href = "{% url 'main:show_main' %}"; }, 800);
+    } else {
+      const msg = json && (json.detail || JSON.stringify(json.errors || {})) || 'Register failed';
+      showToast && showToast({ title:'Error', message: msg, type:'error' });
+    }
+  } catch(e){ console.error(e); showToast && showToast({ title:'Error', message:'Network error', type:'error' }); }
+  return false;
+}
+</script>
 {% endblock content %}

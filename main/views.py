@@ -5,10 +5,11 @@ from django.http import HttpResponse
 from django.core import serializers
 from django.http import HttpResponseRedirect, JsonResponse
 from django.views.decorators.http import require_POST
-from django.contrib.auth.decorators import login_required
-import json
-from django.http import HttpResponseBadRequest
+from django.contrib.auth import authenticate, login as auth_login
+from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.utils.html import strip_tags
+import json
+from django.contrib.auth import logout
 
 def show_main(request):
     product_list = Product.objects.all()
@@ -212,6 +213,95 @@ def add_product_entry_ajax(request):
         new_product.delete()
 
     return JsonResponse({'id': str(new_product.id), 'auto_deleted': auto_deleted}, status=201)
+
+@require_POST
+@login_required
+def edit_product_ajax(request):
+    pid = request.POST.get('id') or request.POST.get('product_id')
+    if not pid:
+        return JsonResponse({'detail': 'Missing product id'}, status=400)
+    try:
+        p = Product.objects.get(pk=pid)
+    except Product.DoesNotExist:
+        return JsonResponse({'detail': 'Not found'}, status=404)
+    if p.user_id != request.user.id:
+        return JsonResponse({'detail': 'Forbidden'}, status=403)
+
+    raw_name = request.POST.get('name', '')
+    name = strip_tags(raw_name).strip()
+    description = strip_tags(request.POST.get('description', '')).strip()
+    try:
+        price = int(float(request.POST.get('price', 0)) or 0)
+    except (ValueError, TypeError):
+        price = p.price
+    category = request.POST.get('category', p.category)
+    thumbnail = (request.POST.get('thumbnail') or '').strip()
+    is_featured = request.POST.get('is_featured') in ('on','true','1','True')
+
+    # basic validation
+    if not name:
+        return JsonResponse({'detail': 'Invalid name'}, status=400)
+
+    p.name = name
+    p.description = description
+    p.price = price
+    p.category = category
+    p.thumbnail = thumbnail
+    p.is_featured = is_featured
+    p.save()
+    return JsonResponse({'id': str(p.id)}, status=200)
+
+@require_POST
+@login_required
+def delete_product_ajax(request):
+    pid = request.POST.get('id') or request.POST.get('product_id')
+    if not pid:
+        return JsonResponse({'detail': 'Missing product id'}, status=400)
+    try:
+        p = Product.objects.get(pk=pid)
+    except Product.DoesNotExist:
+        return JsonResponse({'detail': 'Not found'}, status=404)
+    if p.user_id != request.user.id:
+        return JsonResponse({'detail': 'Forbidden'}, status=403)
+    p.delete()
+    return JsonResponse({'id': pid}, status=200)
+
+
+@require_POST
+def login_ajax(request):
+    # Accept JSON or form-encoded
+    data = request.POST if request.POST else json.loads(request.body.decode('utf-8') or '{}')
+    username = data.get('username') or ''
+    password = data.get('password') or ''
+    user = authenticate(request, username=username, password=password)
+    if user is not None:
+        auth_login(request, user)
+        return JsonResponse({'detail': 'Logged in'}, status=200)
+    return JsonResponse({'detail': 'Invalid credentials'}, status=400)
+
+
+@require_POST
+def register_ajax(request):
+    data = request.POST if request.POST else json.loads(request.body.decode('utf-8') or '{}')
+    form = UserCreationForm(data)
+    if form.is_valid():
+        u = form.save()
+        # optionally auto-login
+        user = authenticate(username=data.get('username'), password=data.get('password1'))
+        if user:
+            auth_login(request, user)
+        return JsonResponse({'detail': 'Account created', 'id': u.id}, status=201)
+    # collect form errors
+    errors = {k: v for k, v in form.errors.items()}
+    return JsonResponse({'detail': 'Invalid data', 'errors': errors}, status=400)
+
+@require_POST
+def logout_ajax(request):
+    """
+    AJAX logout endpoint: invalidate session and return JSON.
+    """
+    logout(request)
+    return JsonResponse({'detail': 'Logged out'}, status=200)
 
 # backward-compatible alias used by urls and templates
 add_product_ajax = add_product_entry_ajax

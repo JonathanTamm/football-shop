@@ -13,13 +13,7 @@
         <p class="text-gray-400">Welcome back to Football Shop</p>
       </div>
 
-      {% if form.errors or form.non_field_errors %}
-      <div class="mb-6">
-        <p class="text-red-400 text-sm">{{ form.non_field_errors }}</p>
-      </div>
-      {% endif %}
-
-      <form method="POST" class="space-y-5">
+      <form id="loginForm" onsubmit="return loginSubmit(event)" class="space-y-5">
         {% csrf_token %}
         <div>
           <label for="username" class="block text-sm font-medium text-gray-300 mb-2">Username</label>
@@ -52,4 +46,28 @@
     </div>
   </div>
 </div>
+
+<script>
+async function loginSubmit(e){
+  e && e.preventDefault();
+  const f = document.getElementById('loginForm');
+  const fd = new FormData(f);
+  try{
+    const resp = await fetch("{% url 'main:login_ajax' %}", {
+      method: 'POST',
+      body: fd,
+      headers: { 'X-CSRFToken': document.cookie.match('(^|;)\\s*csrftoken\\s*=\\s*([^;]+)')?.pop() || '' },
+      credentials:'same-origin'
+    });
+    const json = await resp.json().catch(()=>null);
+    if (resp.ok) {
+      showToast && showToast({ title:'Welcome', message:'Login successful', type:'success', duration:800 });
+      setTimeout(()=> { location.href = "{% url 'main:show_main' %}"; }, 800);
+    } else {
+      showToast && showToast({ title:'Error', message: json && json.detail || 'Login failed', type:'error' });
+    }
+  } catch(e){ console.error(e); showToast && showToast({ title:'Error', message:'Network error', type:'error' }); }
+  return false;
+}
+</script>
 {% endblock content %}

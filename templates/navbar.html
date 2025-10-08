@@ -27,7 +27,7 @@
             <div class="text-sm font-semibold text-white">{{ name|default:user.username }}</div>
             <div class="text-xs text-gray-400">{{ npm|default:"Student" }} - {{ class|default:"Class" }}</div>
           </div>
-          <a href="{% url 'main:logout' %}" class="text-red-400 hover:text-red-500 font-semibold transition-colors">
+          <a href="#" class="text-red-400 hover:text-red-500 font-semibold logout-ajax">
             Logout
           </a>
         {% else %}
@@ -68,7 +68,7 @@
             <div class="font-semibold text-white">{{ name|default:user.username }}</div>
             <div class="text-sm text-gray-400">{{ npm|default:"Student" }} - {{ class|default:"Class" }}</div>
           </div>
-          <a href="{% url 'main:logout' %}" class="block text-red-400 hover:text-red-500 font-semibold">
+          <a href="#" class="block text-red-400 hover:text-red-500 font-semibold logout-ajax">
             Logout
           </a>
         </div>
@@ -89,5 +89,28 @@
     const btn = document.querySelector("button.mobile-menu-button");
     const menu = document.querySelector(".mobile-menu");
     btn.addEventListener("click", () => menu.classList.toggle("hidden"));
+
+    document.querySelectorAll('.logout-ajax').forEach(btn => {
+      btn.addEventListener('click', async function (ev) {
+        ev.preventDefault();
+        const csrftoken = document.cookie.match('(^|;)\\s*csrftoken\\s*=\\s*([^;]+)')?.pop() || '';
+        try {
+          const resp = await fetch("{% url 'main:logout_ajax' %}", {
+            method: 'POST',
+            headers: { 'X-CSRFToken': csrftoken },
+            credentials: 'same-origin'
+          });
+          if (resp.ok) {
+            showToast && showToast({ title: 'Logged out', message: 'You have been logged out', type: 'info', duration: 1200 });
+            setTimeout(() => { location.href = "{% url 'main:login' %}"; }, 900);
+          } else {
+            showToast && showToast({ title: 'Error', message: 'Logout failed', type: 'error' });
+          }
+        } catch (e) {
+          console.error(e);
+          showToast && showToast({ title: 'Error', message: 'Network error', type: 'error' });
+        }
+      });
+    });
   </script>
 </nav>
